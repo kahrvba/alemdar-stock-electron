@@ -5,24 +5,48 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0c111b;
-  color: #ebeff6;
+  background: #f5f5f5;
+  color: #111111;
+  min-height: 100vh;
 }
 
 .app-shell {
   min-height: 100vh;
-  padding: 40px 20px;
+  padding: 24px 28px;
   display: flex;
   justify-content: center;
 }
 
 .search-wrap {
   width: 100%;
-  max-width: 980px;
+  max-width: 1700px;
 }
 
 .input-wrap {
   position: relative;
+}
+
+.filters-row {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #222222;
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: #111111;
+  background: #ffffff;
+  font-size: 13px;
+  user-select: none;
+}
+
+.filter-chip input {
+  margin: 0;
 }
 
 .search-icon {
@@ -30,7 +54,7 @@ body {
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  opacity: 0.7;
+  opacity: 0.65;
   font-size: 14px;
 }
 
@@ -38,25 +62,25 @@ input[type="search"] {
   width: 100%;
   height: 50px;
   border-radius: 9999px;
-  border: 1px solid #2d3748;
-  background: #101826;
-  color: #ebeff6;
+  border: 1px solid #222222;
+  background: #ffffff;
+  color: #111111;
   outline: none;
   padding: 0 14px 0 40px;
   font-size: 14px;
 }
 
 input[type="search"]:focus {
-  border-color: #475569;
-  box-shadow: 0 0 0 2px rgba(71, 85, 105, 0.3);
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
 }
 
 .results-panel {
   margin-top: 12px;
-  border: 1px solid #2d3748;
-  background: #101826;
+  border: 1px solid #222222;
+  background: #ffffff;
   border-radius: 16px;
-  padding: 12px;
+  padding: 14px;
 }
 
 .hidden {
@@ -65,47 +89,47 @@ input[type="search"]:focus {
 
 .state-text {
   text-align: center;
-  color: #97a6ba;
+  color: #4b5563;
   padding: 26px 8px;
   font-size: 14px;
 }
 
 .state-text.error {
-  color: #f87171;
+  color: #b91c1c;
 }
 
 .results-grid {
   display: grid;
-  gap: 10px;
-  max-height: 560px;
-  overflow-y: auto;
-  padding-right: 4px;
+  gap: 14px;
+  overflow: visible;
+  padding-right: 0;
+  grid-template-columns: 1fr;
 }
 
 .result-card {
   display: flex;
-  gap: 12px;
-  border: 1px solid #2d3748;
-  background: #0d1523;
+  gap: 14px;
+  border: 1px solid #222222;
+  background: #ffffff;
   border-radius: 14px;
   text-decoration: none;
   color: inherit;
-  padding: 8px;
+  padding: 12px;
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .result-card:hover {
-  border-color: #56657a;
-  background: #132036;
+  border-color: #000000;
+  background: #f3f4f6;
 }
 
 .image-wrap {
-  width: 64px;
-  height: 64px;
+  width: 96px;
+  height: 96px;
   border-radius: 12px;
   overflow: hidden;
   flex-shrink: 0;
-  background: #1f2937;
+  background: #efefef;
 }
 
 .image-wrap img {
@@ -121,7 +145,7 @@ input[type="search"]:focus {
   display: grid;
   place-items: center;
   font-size: 10px;
-  color: #97a6ba;
+  color: #6b7280;
 }
 
 .card-body {
@@ -140,23 +164,23 @@ input[type="search"]:focus {
 }
 
 .section {
-  font-size: 10px;
-  color: #97a6ba;
+  font-size: 11px;
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   margin-bottom: 4px;
 }
 
 .title {
-  font-size: 14px;
-  color: #ebeff6;
+  font-size: 18px;
+  color: #111111;
   font-weight: 600;
 }
 
 .subtitle {
-  margin-top: 2px;
-  font-size: 12px;
-  color: #97a6ba;
+  margin-top: 6px;
+  font-size: 14px;
+  color: #4b5563;
 }
 
 .meta {
@@ -166,15 +190,31 @@ input[type="search"]:focus {
 
 .qty {
   margin: 0;
-  font-size: 11px;
-  color: #97a6ba;
+  font-size: 13px;
+  color: #4b5563;
 }
 
 .price {
-  margin: 4px 0 0 0;
-  font-size: 12px;
+  margin: 6px 0 0 0;
+  font-size: 15px;
   font-weight: 600;
-  color: #ebeff6;
+  color: #111111;
+}
+
+.print-btn {
+  margin-top: 10px;
+  border: 1px solid #111111;
+  background: #111111;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.print-btn:hover {
+  background: #000000;
 }
 
 .sr-only {
@@ -189,8 +229,12 @@ input[type="search"]:focus {
   border: 0;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1200px) {
   .results-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .result-card {
+    padding: 16px;
   }
 }

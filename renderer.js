@@ -1,4 +1,5 @@
 const queryInput = document.getElementById("universal-inventory-search");
+const idOnlyFilter = document.getElementById("filter-id-only");
 const panel = document.getElementById("results-panel");
 const stateText = document.getElementById("results-state");
 const grid = document.getElementById("results-grid");
@@ -83,6 +84,32 @@ const renderResults = (items) => {
       meta.appendChild(price);
     }
 
+    const printButton = document.createElement("button");
+    printButton.type = "button";
+    printButton.className = "print-btn";
+    printButton.textContent = "Print";
+    printButton.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const qrPayload = {
+        productId: String(item.id),
+        price: item.price ? String(item.price) : "",
+        qrNumber: String(item.id),
+      };
+
+      if (!window.printerAPI?.printQr) {
+        alert("Printer bridge is not available.");
+        return;
+      }
+
+      const result = await window.printerAPI.printQr(qrPayload);
+      if (!result?.ok) {
+        alert(result?.error || "Failed to print QR code.");
+      }
+    });
+    meta.appendChild(printButton);
+
     card.append(imageWrap, body, meta);
     grid.appendChild(card);
   }
@@ -91,6 +118,7 @@ const renderResults = (items) => {
 const executeSearch = async () => {
   const query = queryInput.value;
   const trimmedQuery = query.trim();
+  const idOnly = Boolean(idOnlyFilter?.checked);
 
   if (!trimmedQuery) {
     panel.classList.add("hidden");
@@ -100,6 +128,12 @@ const executeSearch = async () => {
   }
 
   panel.classList.remove("hidden");
+
+  if (idOnly && !/^\d+$/.test(trimmedQuery)) {
+    renderState("Enter a numeric ID to search by ID.");
+    return;
+  }
+
   renderState("Searching all sections...");
 
   if (currentAbortController) {
@@ -109,7 +143,9 @@ const executeSearch = async () => {
 
   try {
     const response = await fetch(
-      `http://127.0.0.1:3791/api/universal-search?query=${encodeURIComponent(trimmedQuery)}&limit=30`,
+      `http://127.0.0.1:3791/api/universal-search?query=${encodeURIComponent(trimmedQuery)}&limit=30&idOnly=${
+        idOnly ? "1" : "0"
+      }`,
       { signal: currentAbortController.signal }
     );
 
@@ -141,3 +177,9 @@ queryInput.addEventListener("input", () => {
     executeSearch();
   }, 250);
 });
+
+if (idOnlyFilter) {
+  idOnlyFilter.addEventListener("change", () => {
+    executeSearch();
+  });
+}

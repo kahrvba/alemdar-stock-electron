@@ -151,6 +151,7 @@ function sendJson(res, statusCode, payload) {
 
 async function handleSearch(reqUrl, res) {
   const query = reqUrl.searchParams.get("query")?.trim() ?? "";
+  const idOnly = reqUrl.searchParams.get("idOnly") === "1";
   const limitParam = Number(reqUrl.searchParams.get("limit"));
   const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(Math.floor(limitParam), 80) : 30;
   const perSectionLimitParam = Number(reqUrl.searchParams.get("perSectionLimit"));
@@ -175,6 +176,17 @@ async function handleSearch(reqUrl, res) {
     const standardExpr = `REGEXP_REPLACE((${section.searchableExpr}), '[[:space:]]+', ' ', 'g')`;
     const boundaryExpr = `TRIM(REGEXP_REPLACE((${section.searchableExpr}), '${COMPACT_REGEX}', ' ', 'g'))`;
     const compactExpr = `REGEXP_REPLACE((${section.searchableExpr}), '${COMPACT_REGEX}', '', 'g')`;
+
+    const whereClause = idOnly
+      ? "($5::int IS NOT NULL AND id = $5::int)"
+      : `(
+        ${standardExpr} LIKE $2::text
+        OR (
+          $4::text IS NOT NULL
+          AND ${compactExpr} LIKE $4::text
+        )
+        OR ($5::int IS NOT NULL AND id = $5::int)
+      )`;
 
     return `
       SELECT
@@ -203,14 +215,7 @@ async function handleSearch(reqUrl, res) {
           END
         )::int AS relevance_score
       FROM ${section.tableName}
-      WHERE (
-        ${standardExpr} LIKE $2::text
-        OR (
-          $4::text IS NOT NULL
-          AND ${compactExpr} LIKE $4::text
-        )
-        OR ($5::int IS NOT NULL AND id = $5::int)
-      )`;
+      WHERE ${whereClause}`;
   }).join("\n\n      UNION ALL\n");
 
   const sql = `
