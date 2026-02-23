@@ -5,12 +5,15 @@
   "main": "index.js",
   "scripts": {
     "start": "electron .",
-    "dist:win": "electron-builder --win nsis",
-    "dist:win-portable": "electron-builder --win portable",
+    "check:pg": "node -e \"require('pg');require('pg-types');console.log('pg runtime ok')\"",
+    "dist:win": "pnpm install --no-frozen-lockfile --config.node-linker=hoisted --config.shamefully-hoist=true && pnpm run check:pg && electron-builder --win nsis --x64",
+    "dist:win-arm64": "pnpm install --no-frozen-lockfile --config.node-linker=hoisted --config.shamefully-hoist=true && pnpm run check:pg && electron-builder --win nsis --arm64",
+    "dist:win-portable": "pnpm install --no-frozen-lockfile --config.node-linker=hoisted --config.shamefully-hoist=true && pnpm run check:pg && electron-builder --win portable --x64",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "pg-types": "^2.2.0"
   },
   "keywords": [],
   "author": "",
@@ -19,18 +22,19 @@
   "build": {
     "appId": "com.alemdar.inventoryqr",
     "productName": "Inventory QR Printer",
+    "asar": false,
+    "npmRebuild": false,
     "directories": {
       "output": "dist"
     },
     "files": [
-      "index.js",
-      "preload.js",
-      "index.html",
-      "renderer.js",
-      "styles.css",
-      "server/**/*",
-      "components/**/*",
-      "package.json"
+      "**/*",
+      "!dist/**",
+      "!.git/**",
+      "!*.log",
+      "!IMG_*.png",
+      "!IMG_*.jpg",
+      "!IMG_*.jpeg"
     ],
     "extraMetadata": {
       "main": "index.js"

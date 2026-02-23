@@ -4,8 +4,16 @@ const path = require("path");
 const { execFile } = require("child_process");
 const { promisify } = require("util");
 const { startUniversalSearchServer, stopUniversalSearchServer } = require("./server/universal-search");
+
+const HARDCODED_CONFIG = {
+  DATABASE_URL:
+    "postgresql://neondb_owner:npg_VGH4OnxCFv2P@ep-rapid-hall-a5gnlurt-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
+  DATABASE_URL_UNPOOLED:
+    "postgresql://neondb_owner:npg_VGH4OnxCFv2P@ep-tight-unit-a5w93vxh.us-east-2.aws.neon.tech/neondb?sslmode=require",
+  ARGOX_LANGUAGE: "pplb",
+};
+
 const TARGET_QR_PRINTER = "Argox OS-214 plus series PPLB";
-const PREFERRED_PRINTER_LANGUAGE = (process.env.ARGOX_LANGUAGE || "pplb").toLowerCase();
 const execFileAsync = promisify(execFile);
 
 const loadLocalEnv = () => {
@@ -31,6 +39,12 @@ const loadLocalEnv = () => {
 };
 
 loadLocalEnv();
+
+process.env.DATABASE_URL = process.env.DATABASE_URL || HARDCODED_CONFIG.DATABASE_URL;
+process.env.DATABASE_URL_UNPOOLED =
+  process.env.DATABASE_URL_UNPOOLED || HARDCODED_CONFIG.DATABASE_URL_UNPOOLED;
+process.env.ARGOX_LANGUAGE = process.env.ARGOX_LANGUAGE || HARDCODED_CONFIG.ARGOX_LANGUAGE;
+const PREFERRED_PRINTER_LANGUAGE = (process.env.ARGOX_LANGUAGE || "pplb").toLowerCase();
 
 const createWindow = () => {
   const win = new BrowserWindow({
