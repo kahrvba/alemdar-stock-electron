@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "electron .",
+    "dist:win": "electron-builder --win nsis",
+    "dist:win-portable": "electron-builder --win portable",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -14,7 +16,46 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.25.0",
+  "build": {
+    "appId": "com.alemdar.inventoryqr",
+    "productName": "Inventory QR Printer",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.js",
+      "preload.js",
+      "index.html",
+      "renderer.js",
+      "styles.css",
+      "server/**/*",
+      "components/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "index.js"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
   "devDependencies": {
-    "electron": "40.0.0"
+    "electron": "40.0.0",
+    "electron-builder": "^24.13.3"
   }
 }
