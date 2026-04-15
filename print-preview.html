@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Print Preview</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f1f5f9;
+        color: #111;
+      }
+
+      .toolbar {
+        position: sticky;
+        top: 0;
+        padding: 10px 14px;
+        background: #111827;
+        color: #fff;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .toolbar-title {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      button {
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #111;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .sheet-wrap {
+        display: flex;
+        justify-content: center;
+        padding: 18px;
+      }
+
+      .sheet {
+        width: 420px;
+        background: #fff;
+        border: 1px solid #111;
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .name {
+        margin: 0 0 16px 0;
+        font-size: 36px;
+        line-height: 1.05;
+        font-weight: 700;
+      }
+
+      .barcode {
+        display: block;
+        width: 100%;
+        max-width: 390px;
+        height: auto;
+      }
+
+      .barcode-value {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 42px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+
+      @media print {
+        .toolbar {
+          display: none;
+        }
+
+        body {
+          background: #fff;
+        }
+
+        .sheet-wrap {
+          padding: 0;
+        }
+
+        .sheet {
+          border: 0;
+          border-radius: 0;
+          width: 100%;
+          max-width: none;
+          padding: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <span class="toolbar-title">Print Preview</span>
+      <button id="btnPrint" type="button">Print</button>
+      <button id="btnClose" type="button">Close</button>
+    </div>
+    <main class="sheet-wrap">
+      <section class="sheet">
+        <p class="name" id="labelName"></p>
+        <img id="labelBarcode" class="barcode" alt="Barcode" />
+        <div id="labelBarcodeValue" class="barcode-value"></div>
+      </section>
+    </main>
+    <script src="./print-preview.js"></script>
+  </body>
+</html>

@@ -6,118 +6,36 @@ const grid = document.getElementById("results-grid");
 
 let currentAbortController = null;
 let searchTimeout = null;
+let searchSeq = 0;
 
-const escapeHtml = (value) =>
-  String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+const logUi = (message, meta) => {
+  if (meta) console.log(`[renderer] ${message}`, meta);
+  else console.log(`[renderer] ${message}`);
+};
+
+window.addEventListener("error", (event) => {
+  console.error("[renderer] window error", event.message, event.filename, event.lineno, event.colno);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("[renderer] unhandled rejection", event.reason);
+});
 
 const openPrintPreview = (item) => {
-  const qrPayload = `ID:${item.id}|PRICE:${item.price ? String(item.price) : "0"}|QR:${item.id}`;
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(qrPayload)}`;
+  const previewPayload = {
+    name: item.title,
+    barcode: String(item.id),
+  };
+  const encoded = encodeURIComponent(JSON.stringify(previewPayload));
 
-  const preview = window.open("", "_blank", "width=640,height=760");
+  const preview = window.open(`print-preview.html#${encoded}`, "_blank", "width=700,height=820");
+  logUi("openPrintPreview called", { itemId: item.id, title: item.title });
   if (!preview) {
+    logUi("openPrintPreview failed: popup blocked");
     alert("Could not open print preview window.");
     return;
   }
-
-  const priceText = item.price ? formatPrice(String(item.price)) : "0";
-  preview.document.open();
-  preview.document.write(`
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>Print Preview</title>
-        <style>
-          body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f1f5f9;
-            color: #111;
-          }
-          .toolbar {
-            position: sticky;
-            top: 0;
-            padding: 10px 14px;
-            background: #111827;
-            color: #fff;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-          }
-          button {
-            border: 1px solid #cbd5e1;
-            background: #fff;
-            color: #111;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-          }
-          .sheet-wrap {
-            display: flex;
-            justify-content: center;
-            padding: 18px;
-          }
-          .sheet {
-            width: 360px;
-            background: #fff;
-            border: 1px solid #111;
-            border-radius: 10px;
-            padding: 12px;
-          }
-          .line {
-            margin: 0 0 6px 0;
-            font-size: 14px;
-            word-break: break-word;
-          }
-          .line b {
-            display: inline-block;
-            min-width: 62px;
-          }
-          .qr {
-            margin-top: 8px;
-            width: 280px;
-            height: 280px;
-            border: 1px solid #111;
-            display: block;
-          }
-          @media print {
-            .toolbar { display: none; }
-            body { background: #fff; }
-            .sheet-wrap { padding: 0; }
-            .sheet { border: 1px solid #000; border-radius: 0; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="toolbar">
-          <span>Print Preview</span>
-          <button id="btnPrint">Print</button>
-          <button id="btnClose">Close</button>
-        </div>
-        <main class="sheet-wrap">
-          <section class="sheet">
-            <p class="line"><b>ID:</b> ${escapeHtml(item.id)}</p>
-            <p class="line"><b>Name:</b> ${escapeHtml(item.title)}</p>
-            <p class="line"><b>Price:</b> ${escapeHtml(priceText)}</p>
-            <p class="line"><b>Barcode:</b> ${escapeHtml(String(item.id))}</p>
-            <img class="qr" src="${qrSrc}" alt="QR Code" />
-          </section>
-        </main>
-        <script>
-          document.getElementById("btnPrint").addEventListener("click", () => window.print());
-          document.getElementById("btnClose").addEventListener("click", () => window.close());
-        </script>
-      </body>
-    </html>
-  `);
-  preview.document.close();
+  logUi("openPrintPreview success");
 };
 
 const formatPrice = (value) => {
@@ -214,9 +132,11 @@ const renderResults = (items) => {
 };
 
 const executeSearch = async () => {
+  const seq = ++searchSeq;
   const query = queryInput.value;
   const trimmedQuery = query.trim();
   const idOnly = Boolean(idOnlyFilter?.checked);
+  logUi("executeSearch start", { seq, query, trimmedQuery, idOnly });
 
   if (!trimmedQuery) {
     panel.classList.add("hidden");
@@ -228,6 +148,7 @@ const executeSearch = async () => {
   panel.classList.remove("hidden");
 
   if (idOnly && !/^\d+$/.test(trimmedQuery)) {
+    logUi("executeSearch blocked: idOnly requires numeric query", { seq, trimmedQuery });
     renderState("Enter a numeric ID to search by ID.");
     return;
   }
@@ -246,6 +167,7 @@ const executeSearch = async () => {
       }`,
       { signal: currentAbortController.signal }
     );
+    logUi("search response received", { seq, ok: response.ok, status: response.status });
 
     if (!response.ok) {
       throw new Error("Failed to search inventory");
@@ -253,6 +175,7 @@ const executeSearch = async () => {
 
     const data = await response.json();
     const items = Array.isArray(data.items) ? data.items : [];
+    logUi("search parsed", { seq, count: items.length });
 
     if (items.length > 0) {
       renderResults(items);
@@ -262,11 +185,13 @@ const executeSearch = async () => {
     renderState(`No results for "${trimmedQuery}".`);
   } catch (error) {
     if (currentAbortController.signal.aborted) return;
+    logUi("search failed", { seq, error: error instanceof Error ? error.message : String(error) });
     renderState(error instanceof Error ? error.message : "Search failed", true);
   }
 };
 
 queryInput.addEventListener("input", () => {
+  logUi("query input changed", { value: queryInput.value });
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
@@ -278,6 +203,7 @@ queryInput.addEventListener("input", () => {
 
 if (idOnlyFilter) {
   idOnlyFilter.addEventListener("change", () => {
+    logUi("idOnly filter changed", { checked: idOnlyFilter.checked });
     executeSearch();
   });
 }

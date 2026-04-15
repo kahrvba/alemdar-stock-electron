@@ -143,6 +143,12 @@ const escapeLike = (value) => value.replace(/[\\%_]/g, "\\$&");
 let server;
 let pool;
 
+const logServer = (message, meta) => {
+  const line = `[server] ${message}`;
+  if (meta) console.log(line, meta);
+  else console.log(line);
+};
+
 function sendJson(res, statusCode, payload) {
   res.statusCode = statusCode;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -152,6 +158,7 @@ function sendJson(res, statusCode, payload) {
 async function handleSearch(reqUrl, res) {
   const query = reqUrl.searchParams.get("query")?.trim() ?? "";
   const idOnly = reqUrl.searchParams.get("idOnly") === "1";
+  logServer("request", { query, idOnly });
   const limitParam = Number(reqUrl.searchParams.get("limit"));
   const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(Math.floor(limitParam), 80) : 30;
   const perSectionLimitParam = Number(reqUrl.searchParams.get("perSectionLimit"));
@@ -270,9 +277,11 @@ ${unions}
     }));
 
     sendJson(res, 200, { items, total: items.length });
+    logServer("response ok", { count: items.length });
   } catch (error) {
     console.error("[universal-search] Database error:", error);
     sendJson(res, 500, { error: "Failed to search inventory" });
+    logServer("response error", { error: error instanceof Error ? error.message : String(error) });
   } finally {
     client?.release();
   }
@@ -312,6 +321,7 @@ async function startUniversalSearchServer(databaseUrl) {
     server.once("error", reject);
     server.listen(PORT, "127.0.0.1", resolve);
   });
+  logServer("listening", { port: PORT });
 
   return { port: PORT };
 }
@@ -320,6 +330,7 @@ async function stopUniversalSearchServer() {
   if (server) {
     await new Promise((resolve) => server.close(resolve));
     server = undefined;
+    logServer("stopped");
   }
 
   if (pool) {

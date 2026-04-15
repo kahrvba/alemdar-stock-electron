@@ -15,6 +15,20 @@ const HARDCODED_CONFIG = {
 
 const TARGET_QR_PRINTER = "Argox OS-214 plus series PPLB";
 const execFileAsync = promisify(execFile);
+const RUNTIME_LOG_PATH = path.join(__dirname, "runtime-debug.log");
+
+const logMain = (level, message, meta) => {
+  const line = `[${new Date().toISOString()}] [${level}] ${message}${
+    meta ? ` ${JSON.stringify(meta)}` : ""
+  }`;
+  if (level === "error") console.error(line);
+  else console.log(line);
+  try {
+    fs.appendFileSync(RUNTIME_LOG_PATH, `${line}\n`);
+  } catch {
+    // Keep app running even if log file write fails.
+  }
+};
 
 const loadLocalEnv = () => {
   const envPath = path.join(__dirname, ".env");
@@ -39,6 +53,10 @@ const loadLocalEnv = () => {
 };
 
 loadLocalEnv();
+logMain("info", "Environment loaded", {
+  hasDatabaseUrl: Boolean(process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED),
+  printer: TARGET_QR_PRINTER,
+});
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || HARDCODED_CONFIG.DATABASE_URL;
 process.env.DATABASE_URL_UNPOOLED =
@@ -59,7 +77,14 @@ const createWindow = () => {
     },
   });
 
+  logMain("info", "Creating main window");
   win.loadFile("index.html");
+  win.webContents.on("did-finish-load", () => {
+    logMain("info", "Main window loaded");
+  });
+  win.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
+    logMain("error", "Main window failed to load", { errorCode, errorDescription });
+  });
 };
 
 const sanitizeQrPayload = (value) =>
@@ -138,6 +163,7 @@ const buildPplzZplQrCommand = (value) => {
 };
 
 const sendRawToWindowsPrinter = async (printerName, rawCommand, dataType = "RAW") => {
+  logMain("info", "Sending raw print job", { printerName, dataType, bytes: rawCommand.length });
   const printerNameBase64 = Buffer.from(printerName, "utf8").toString("base64");
   const rawBase64 = Buffer.from(rawCommand, "utf8").toString("base64");
   const dataTypeBase64 = Buffer.from(dataType, "utf8").toString("base64");
@@ -225,11 +251,14 @@ Write-Output "OK"
     encodedScript,
   ]);
 
+  logMain("info", "Raw print command completed", { stdout: String(stdout || "").trim(), stderr: String(stderr || "").trim() });
   return { stdout, stderr };
 };
 
 ipcMain.handle("print-qr", async (_event, payload) => {
+  logMain("info", "print-qr request received", { payload });
   if (process.platform !== "win32") {
+    logMain("error", "print-qr rejected: non-windows platform", { platform: process.platform });
     return {
       ok: false,
       error: "RAW printer mode is supported on Windows only.",
@@ -251,16 +280,21 @@ ipcMain.handle("print-qr", async (_event, payload) => {
       const command = lang === "pplz" ? buildPplzZplQrCommand(payload) : buildPplbEplQrCommand(payload);
       for (const dataType of dataTypeAttempts) {
         try {
+          logMain("info", "Trying print variant", { lang, dataType });
           await sendRawToWindowsPrinter(TARGET_QR_PRINTER, command, dataType);
+          logMain("info", "Print variant succeeded", { lang, dataType });
           return { ok: true, language: lang, dataType };
         } catch (error) {
           lastError = error instanceof Error ? error.message : String(error);
+          logMain("error", "Print variant failed", { lang, dataType, lastError });
         }
       }
     }
 
+    logMain("error", "All print variants failed", { lastError });
     return { ok: false, error: lastError };
   } catch (error) {
+    logMain("error", "print-qr crashed", { error: error instanceof Error ? error.message : String(error) });
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Print failed",
@@ -268,20 +302,84 @@ ipcMain.handle("print-qr", async (_event, payload) => {
   }
 });
 
+ipcMain.handle("list-printers", async (event) => {
+  try {
+    const printers = await event.sender.getPrintersAsync();
+    logMain("info", "list-printers", {
+      count: printers.length,
+      names: printers.map((p) => p.name),
+    });
+    return { ok: true, printers };
+  } catch (error) {
+    logMain("error", "list-printers failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+});
+
+ipcMain.handle("print-preview-dialog", async (event) => {
+  logMain("info", "print-preview-dialog requested");
+  try {
+    const printers = await event.sender.getPrintersAsync();
+    logMain("info", "print-preview available printers", {
+      count: printers.length,
+      names: printers.map((p) => p.name),
+      targetFound: printers.some((p) => p.name === TARGET_QR_PRINTER),
+    });
+  } catch (error) {
+    logMain("error", "print-preview getPrinters failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  return await new Promise((resolve) => {
+    event.sender.print(
+      {
+        silent: false,
+        printBackground: true,
+      },
+      (success, failureReason) => {
+        if (success) {
+          logMain("info", "print-preview completed and accepted by OS print pipeline");
+          resolve({ ok: true });
+          return;
+        }
+        const reason = failureReason || "Unknown print failure or canceled by user";
+        logMain("error", "print-preview failed or canceled", { reason });
+        resolve({ ok: false, error: reason });
+      }
+    );
+  });
+});
+
 app.whenReady().then(() => {
+  logMain("info", "Electron app ready");
   const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED;
   if (!databaseUrl) {
-    console.error("Missing DATABASE_URL or DATABASE_URL_UNPOOLED in environment.");
+    logMain("error", "Missing DATABASE_URL or DATABASE_URL_UNPOOLED in environment");
   }
 
   startUniversalSearchServer(databaseUrl)
     .then(() => {
+      logMain("info", "Universal search server started");
       createWindow();
     })
     .catch((error) => {
-      console.error("Failed to start universal search server:", error);
+      logMain("error", "Failed to start universal search server", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       app.quit();
     });
+});
+
+app.on("web-contents-created", (_event, contents) => {
+  contents.on("console-message", (_evt, level, message, line, sourceId) => {
+    logMain("info", "renderer-console", { level, message, line, sourceId });
+  });
+  contents.on("render-process-gone", (_evt, details) => {
+    logMain("error", "Renderer process gone", details);
+  });
 });
 
 app.on("window-all-closed", () => {
@@ -289,5 +387,17 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", async () => {
+  logMain("info", "App before-quit");
   await stopUniversalSearchServer();
+  logMain("info", "Universal search server stopped");
+});
+
+process.on("uncaughtException", (error) => {
+  logMain("error", "uncaughtException", { error: error.message, stack: error.stack });
+});
+
+process.on("unhandledRejection", (reason) => {
+  logMain("error", "unhandledRejection", {
+    reason: reason instanceof Error ? reason.message : String(reason),
+  });
 });
