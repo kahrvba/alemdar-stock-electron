@@ -87,76 +87,77 @@ const createWindow = () => {
   });
 };
 
-const sanitizeQrPayload = (value) =>
+const sanitizePrintText = (value) =>
   String(value ?? "")
     .replace(/[\r\n"]/g, " ")
     .trim();
 
 const normalizePrintPayload = (value) => {
   const payload = value && typeof value === "object" ? value : {};
-  const productId = sanitizeQrPayload(payload.productId ?? payload.id);
-  const qrNumber = sanitizeQrPayload(payload.qrNumber ?? productId);
-  const rawPrice = sanitizeQrPayload(payload.price ?? "");
+  const name = sanitizePrintText(payload.name ?? "");
+  const barcode = sanitizePrintText(payload.barcode ?? payload.id ?? "");
+  const rawPrice = sanitizePrintText(payload.price ?? "");
   const normalizedPrice = rawPrice ? rawPrice.replace(/[^\d.,-]/g, "") : "";
 
-  if (!productId) {
-    throw new Error("Product ID is required.");
+  if (!barcode) {
+    throw new Error("Barcode is required.");
   }
 
   return {
-    productId,
-    qrNumber,
-    price: normalizedPrice || "0",
-    qrData: `ID:${productId}|PRICE:${normalizedPrice || "0"}|QR:${qrNumber}`,
+    name,
+    barcode,
+    price: normalizedPrice || "0.00",
+    priceText: `$${normalizedPrice || "0.00"}`,
   };
 };
 
-const sanitizeLabelText = (value) => sanitizeQrPayload(value).replace(/[,^~]/g, " ");
+const sanitizeLabelText = (value) => sanitizePrintText(value).replace(/[,^~]/g, " ");
 
-const buildPplbEplQrCommand = (value) => {
+const buildPplbEplBarcodeCommand = (value) => {
   const data = normalizePrintPayload(value);
 
-  if (!data.qrData) {
-    throw new Error("QR payload is empty.");
-  }
-
-  // PPLB(EPL2) style raw label format.
+  // PPLB(EPL2) style raw 60x30mm label (203dpi).
+  // q480 ~= 60mm width, Q240 ~= 30mm height.
+  const name = sanitizeLabelText(data.name || "Item");
+  const barcode = sanitizeLabelText(data.barcode);
+  const price = sanitizeLabelText(data.priceText);
   return [
     "N",
-    "q832",
+    "q480",
     "Q240,24",
     "S2",
     "D8",
     "ZT",
     "R0,0",
     "f100",
-    `A30,20,0,4,1,1,N,"ID: ${sanitizeLabelText(data.productId)}"`,
-    `A30,55,0,4,1,1,N,"PRICE: ${sanitizeLabelText(data.price)}"`,
-    `A30,90,0,4,1,1,N,"QR: ${sanitizeLabelText(data.qrNumber)}"`,
-    `b300,20,Q,m2,s6,eM,"${sanitizeLabelText(data.qrData)}"`,
+    `A20,12,0,4,1,1,N,"${name}"`,
+    // EPL2 barcode command: Bx,y,rotation,type,narrow,wide,height,hr,text
+    // Using type "3" (Code128 on many EPL2-compatible firmwares).
+    `B20,84,0,3,2,4,54,B,"${barcode}"`,
+    `A20,146,0,2,1,1,N,"${barcode}"`,
+    `A332,104,0,5,1,1,N,"${price}"`,
     "P1",
     "",
   ].join("\r\n");
 };
 
-const buildPplzZplQrCommand = (value) => {
+const buildPplzZplBarcodeCommand = (value) => {
   const data = normalizePrintPayload(value);
-  if (!data.qrData) {
-    throw new Error("QR payload is empty.");
-  }
 
-  // PPLZ(ZPL) style QR format.
+  const name = sanitizeLabelText(data.name || "Item");
+  const barcode = sanitizeLabelText(data.barcode);
+  const price = sanitizeLabelText(data.priceText);
+
+  // PPLZ(ZPL) style raw 60x30mm label (203dpi).
   return [
     "^XA",
-    "^PW832",
-    "^LL320",
+    "^PW480",
+    "^LL240",
     "^LH0,0",
-    `^FO30,20^A0N,32,28^FDID: ${sanitizeLabelText(data.productId)}^FS`,
-    `^FO30,60^A0N,32,28^FDPRICE: ${sanitizeLabelText(data.price)}^FS`,
-    `^FO30,100^A0N,32,28^FDQR: ${sanitizeLabelText(data.qrNumber)}^FS`,
-    "^FO420,20",
-    "^BQN,2,6",
-    `^FDLA,${sanitizeLabelText(data.qrData)}^FS`,
+    `^FO20,12^A0N,30,26^FD${name}^FS`,
+    `^FO20,84^BY2,3,54^BCN,54,N,N,N^FD${barcode}^FS`,
+    `^FO20,146^A0N,24,20^FD${barcode}^FS`,
+    `^FO332,104^A0N,44,36^FD${price}^FS`,
     "^XZ",
     "",
   ].join("\r\n");
@@ -277,7 +278,7 @@ ipcMain.handle("print-qr", async (_event, payload) => {
 
     let lastError = "Unknown print failure.";
     for (const lang of langAttempts) {
-      const command = lang === "pplz" ? buildPplzZplQrCommand(payload) : buildPplbEplQrCommand(payload);
+      const command = lang === "pplz" ? buildPplzZplBarcodeCommand(payload) : buildPplbEplBarcodeCommand(payload);
       for (const dataType of dataTypeAttempts) {
         try {
           logMain("info", "Trying print variant", { lang, dataType });

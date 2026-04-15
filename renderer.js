@@ -123,9 +123,40 @@ const renderResults = (items) => {
     printButton.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openPrintPreview(item);
+      const rawPayload = {
+        name: item.title,
+        barcode: String(item.barcode || item.id),
+        price: item.price ? String(item.price) : "0",
+      };
+
+      logUi("raw print requested", rawPayload);
+      if (!window.printerAPI?.printQr) {
+        alert("Printer API not available.");
+        return;
+      }
+
+      const result = await window.printerAPI.printQr(rawPayload);
+      if (!result?.ok) {
+        logUi("raw print failed", result);
+        alert(`Print failed: ${result?.error || "Unknown error"}`);
+        return;
+      }
+
+      logUi("raw print succeeded", result);
     });
     meta.appendChild(printButton);
+
+    const previewButton = document.createElement("button");
+    previewButton.type = "button";
+    previewButton.className = "print-btn";
+    previewButton.textContent = "Preview";
+    previewButton.style.marginTop = "6px";
+    previewButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openPrintPreview(item);
+    });
+    meta.appendChild(previewButton);
 
     card.append(imageWrap, body, meta);
     grid.appendChild(card);
