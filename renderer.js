@@ -7,6 +7,119 @@ const grid = document.getElementById("results-grid");
 let currentAbortController = null;
 let searchTimeout = null;
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const openPrintPreview = (item) => {
+  const qrPayload = `ID:${item.id}|PRICE:${item.price ? String(item.price) : "0"}|QR:${item.id}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(qrPayload)}`;
+
+  const preview = window.open("", "_blank", "width=640,height=760");
+  if (!preview) {
+    alert("Could not open print preview window.");
+    return;
+  }
+
+  const priceText = item.price ? formatPrice(String(item.price)) : "0";
+  preview.document.open();
+  preview.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Print Preview</title>
+        <style>
+          body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #111;
+          }
+          .toolbar {
+            position: sticky;
+            top: 0;
+            padding: 10px 14px;
+            background: #111827;
+            color: #fff;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+          }
+          button {
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #111;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+          }
+          .sheet-wrap {
+            display: flex;
+            justify-content: center;
+            padding: 18px;
+          }
+          .sheet {
+            width: 360px;
+            background: #fff;
+            border: 1px solid #111;
+            border-radius: 10px;
+            padding: 12px;
+          }
+          .line {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            word-break: break-word;
+          }
+          .line b {
+            display: inline-block;
+            min-width: 62px;
+          }
+          .qr {
+            margin-top: 8px;
+            width: 280px;
+            height: 280px;
+            border: 1px solid #111;
+            display: block;
+          }
+          @media print {
+            .toolbar { display: none; }
+            body { background: #fff; }
+            .sheet-wrap { padding: 0; }
+            .sheet { border: 1px solid #000; border-radius: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="toolbar">
+          <span>Print Preview</span>
+          <button id="btnPrint">Print</button>
+          <button id="btnClose">Close</button>
+        </div>
+        <main class="sheet-wrap">
+          <section class="sheet">
+            <p class="line"><b>ID:</b> ${escapeHtml(item.id)}</p>
+            <p class="line"><b>Name:</b> ${escapeHtml(item.title)}</p>
+            <p class="line"><b>Price:</b> ${escapeHtml(priceText)}</p>
+            <p class="line"><b>Barcode:</b> ${escapeHtml(String(item.id))}</p>
+            <img class="qr" src="${qrSrc}" alt="QR Code" />
+          </section>
+        </main>
+        <script>
+          document.getElementById("btnPrint").addEventListener("click", () => window.print());
+          document.getElementById("btnClose").addEventListener("click", () => window.close());
+        </script>
+      </body>
+    </html>
+  `);
+  preview.document.close();
+};
+
 const formatPrice = (value) => {
   if (!value) return null;
   const numeric = Number(value);
@@ -91,22 +204,7 @@ const renderResults = (items) => {
     printButton.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopPropagation();
-
-      const qrPayload = {
-        productId: String(item.id),
-        price: item.price ? String(item.price) : "",
-        qrNumber: String(item.id),
-      };
-
-      if (!window.printerAPI?.printQr) {
-        alert("Printer bridge is not available.");
-        return;
-      }
-
-      const result = await window.printerAPI.printQr(qrPayload);
-      if (!result?.ok) {
-        alert(result?.error || "Failed to print QR code.");
-      }
+      openPrintPreview(item);
     });
     meta.appendChild(printButton);
 
