@@ -59,12 +59,13 @@
         background: #fff;
         border: 1px solid #111;
         border-radius: 4px;
-        padding: 1.6mm 1.4mm 1.4mm 2.8mm;
+        /* Compensate for printer left non-printable margin */
+        padding: 1.4mm 0.8mm 1.2mm 4.6mm;
         display: grid;
-        grid-template-columns: 36mm 15mm;
-        grid-template-rows: 8.8mm 8.2mm 4.4mm;
-        column-gap: 1.6mm;
-        row-gap: 0.4mm;
+        grid-template-columns: 39mm 12.5mm;
+        grid-template-rows: 9mm 8.4mm 4.5mm;
+        column-gap: 1.2mm;
+        row-gap: 0.3mm;
         overflow: hidden;
       }
 
@@ -72,7 +73,7 @@
         margin: 0;
         grid-column: 1 / 2;
         grid-row: 1 / 2;
-        font-size: 3mm;
+        font-size: 2.95mm;
         line-height: 1.1;
         font-weight: 700;
         white-space: normal;
@@ -85,9 +86,9 @@
       .barcode {
         grid-column: 1 / 2;
         grid-row: 2 / 3;
-        width: 36mm;
-        max-width: 36mm;
-        height: 8.2mm;
+        width: 39mm;
+        max-width: 39mm;
+        height: 8.4mm;
         object-fit: fill;
       }
 
@@ -95,7 +96,7 @@
         margin-top: 0;
         grid-column: 1 / 2;
         grid-row: 3 / 4;
-        width: 36mm;
+        width: 39mm;
         text-align: center;
         font-size: 2.5mm;
         font-weight: 500;
@@ -109,9 +110,9 @@
         grid-row: 2 / 4;
         align-self: center;
         justify-self: end;
-        width: 15mm;
+        width: 12.5mm;
         text-align: right;
-        font-size: 5mm;
+        font-size: 4.8mm;
         font-weight: 800;
         line-height: 1;
         white-space: nowrap;
