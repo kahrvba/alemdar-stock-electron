@@ -59,54 +59,57 @@
         background: #fff;
         border: 1px solid #111;
         border-radius: 4px;
-        padding: 1.6mm 1.8mm 1.6mm 2.8mm;
-        position: relative;
+        padding: 1.6mm 1.4mm 1.4mm 2.8mm;
+        display: grid;
+        grid-template-columns: 36mm 15mm;
+        grid-template-rows: 8.8mm 8.2mm 4.4mm;
+        column-gap: 1.6mm;
+        row-gap: 0.4mm;
         overflow: hidden;
       }
 
       .name {
         margin: 0;
-        position: absolute;
-        left: 3.4mm;
-        top: 1.8mm;
-        width: 35mm;
-        max-height: 8mm;
-        font-size: 3.2mm;
+        grid-column: 1 / 2;
+        grid-row: 1 / 2;
+        font-size: 3mm;
         line-height: 1.1;
         font-weight: 700;
-        white-space: normal;
+        white-space: nowrap;
+        text-overflow: ellipsis;
         overflow: hidden;
       }
 
       .barcode {
-        position: absolute;
-        left: 3.4mm;
-        top: 11.2mm;
-        width: 34mm;
-        max-width: 34mm;
-        height: 7.6mm;
+        grid-column: 1 / 2;
+        grid-row: 2 / 3;
+        width: 36mm;
+        max-width: 36mm;
+        height: 8.2mm;
         object-fit: fill;
       }
 
       .barcode-value {
         margin-top: 0;
-        position: absolute;
-        left: 3.4mm;
-        top: 20mm;
-        width: 34mm;
+        grid-column: 1 / 2;
+        grid-row: 3 / 4;
+        width: 36mm;
         text-align: center;
         font-size: 2.5mm;
         font-weight: 500;
         letter-spacing: 0.1mm;
+        white-space: nowrap;
+        overflow: hidden;
       }
 
-      .number {
-        position: absolute;
-        right: 1.8mm;
-        top: 13.2mm;
-        width: 20.5mm;
+      .price {
+        grid-column: 2 / 3;
+        grid-row: 2 / 4;
+        align-self: center;
+        justify-self: end;
+        width: 15mm;
         text-align: right;
-        font-size: 5.4mm;
+        font-size: 5mm;
         font-weight: 800;
         line-height: 1;
         white-space: nowrap;
@@ -148,7 +151,7 @@
         <p class="name" id="labelName"></p>
         <img id="labelBarcode" class="barcode" alt="Barcode" />
         <div id="labelBarcodeValue" class="barcode-value"></div>
-        <div id="labelNumber" class="number"></div>
+        <div id="labelPrice" class="price"></div>
       </section>
     </main>
     <script src="./print-preview.js"></script>

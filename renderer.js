@@ -25,7 +25,7 @@ const openPrintPreview = (item) => {
   const previewPayload = {
     name: item.title,
     barcode: String(item.barcode || item.id),
-    number: String(item.id),
+    price: item.price ? String(item.price) : "0",
   };
   const encoded = encodeURIComponent(JSON.stringify(previewPayload));
 
