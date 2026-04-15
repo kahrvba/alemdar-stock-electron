@@ -60,53 +60,57 @@
         border: 1px solid #111;
         border-radius: 4px;
         padding: 2mm;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        grid-template-rows: auto auto auto;
-        column-gap: 2mm;
-        row-gap: 0.5mm;
+        position: relative;
         overflow: hidden;
       }
 
       .name {
         margin: 0;
-        grid-column: 1 / 2;
-        grid-row: 1 / 2;
-        font-size: 4.4mm;
-        line-height: 1.05;
+        position: absolute;
+        left: 2mm;
+        top: 1.5mm;
+        width: 39mm;
+        max-height: 8mm;
+        font-size: 3.5mm;
+        line-height: 1.1;
         font-weight: 700;
-        max-height: 9mm;
+        white-space: normal;
         overflow: hidden;
       }
 
       .barcode {
-        grid-column: 1 / 2;
-        grid-row: 2 / 3;
-        width: 37mm;
-        max-width: 37mm;
+        position: absolute;
+        left: 2mm;
+        top: 11mm;
+        width: 36mm;
+        max-width: 36mm;
         height: 8mm;
-        height: auto;
+        object-fit: fill;
       }
 
       .barcode-value {
         margin-top: 0;
-        grid-column: 1 / 2;
-        grid-row: 3 / 4;
+        position: absolute;
+        left: 2mm;
+        top: 20.2mm;
+        width: 36mm;
         text-align: center;
-        font-size: 3.2mm;
-        font-weight: 700;
-        letter-spacing: 0.2mm;
+        font-size: 2.8mm;
+        font-weight: 500;
+        letter-spacing: 0.15mm;
       }
 
       .number {
-        grid-column: 2 / 3;
-        grid-row: 2 / 4;
-        align-self: center;
-        justify-self: end;
-        font-size: 7.4mm;
+        position: absolute;
+        right: 2mm;
+        top: 13.5mm;
+        width: 18mm;
+        text-align: right;
+        font-size: 6.2mm;
         font-weight: 800;
         line-height: 1;
         white-space: nowrap;
+        overflow: hidden;
       }
 
       @media print {

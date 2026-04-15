@@ -24,7 +24,7 @@ window.addEventListener("unhandledrejection", (event) => {
 const openPrintPreview = (item) => {
   const previewPayload = {
     name: item.title,
-    barcode: String(item.id),
+    barcode: String(item.barcode || item.id),
     number: String(item.id),
   };
   const encoded = encodeURIComponent(JSON.stringify(previewPayload));

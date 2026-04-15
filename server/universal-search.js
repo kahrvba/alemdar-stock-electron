@@ -11,6 +11,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "english_names",
     subtitleExpr: "COALESCE(turkish_names, category)",
     imageExpr: "image_filename",
+    barcodeExpr: "barcode::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -24,6 +25,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "english_name",
     subtitleExpr: "COALESCE(turkish_name, category)",
     imageExpr: "image_filename",
+    barcodeExpr: "barcode::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -37,6 +39,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "name",
     subtitleExpr: "category",
     imageExpr: "image_filename",
+    barcodeExpr: "id::text",
     priceExpr: "selling_price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -50,6 +53,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "english_name",
     subtitleExpr: "COALESCE(turkish_name, category)",
     imageExpr: "image_filename",
+    barcodeExpr: "COALESCE(barcode, kodu, id::text)::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -63,6 +67,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "model",
     subtitleExpr: "CONCAT('Volt: ', COALESCE(volt::text, '-'))",
     imageExpr: "image_filename",
+    barcodeExpr: "id::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr: "LOWER(COALESCE(model, '') || ' ' || COALESCE(volt::text, ''))",
@@ -75,6 +80,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "name",
     subtitleExpr: "CONCAT_WS(' • ', brand, category)",
     imageExpr: "image_filename",
+    barcodeExpr: "id::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -88,6 +94,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "name",
     subtitleExpr: "CONCAT_WS(' • ', brand, material, color)",
     imageExpr: "image_filename",
+    barcodeExpr: "id::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -101,6 +108,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "english_names",
     subtitleExpr: "COALESCE(turkish_names, category)",
     imageExpr: "image_filename",
+    barcodeExpr: "barcode::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -114,6 +122,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "english_names",
     subtitleExpr: "COALESCE(turkish_names, category)",
     imageExpr: "image_filename",
+    barcodeExpr: "barcode::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -127,6 +136,7 @@ const SEARCH_SECTIONS = [
     titleExpr: "english_names",
     subtitleExpr: "COALESCE(turkish_names, category)",
     imageExpr: "image_filename",
+    barcodeExpr: "id::text",
     priceExpr: "price::text",
     quantityExpr: "COALESCE(quantity, 0)",
     searchableExpr:
@@ -204,6 +214,7 @@ async function handleSearch(reqUrl, res) {
         ${section.titleExpr} AS title,
         ${section.subtitleExpr} AS subtitle,
         ${section.imageExpr} AS image_filename,
+        ${section.barcodeExpr} AS barcode_value,
         ${section.priceExpr} AS price,
         ${section.quantityExpr} AS quantity,
         (
@@ -271,6 +282,7 @@ ${unions}
       title: row.title ?? `Item #${row.id}`,
       subtitle: row.subtitle ?? null,
       image: row.image_filename ?? null,
+      barcode: row.barcode_value ?? String(row.id),
       price: row.price ?? null,
       quantity: row.quantity ?? 0,
       href: `${row.route_path}?query=${row.id}&field=id`,
