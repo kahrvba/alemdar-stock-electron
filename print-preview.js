@@ -21,8 +21,9 @@ const parsePayload = () => {
 const payload = parsePayload() || {};
 const name = payload.name ? String(payload.name) : "Unknown Item";
 const barcode = payload.barcode ? String(payload.barcode) : "";
+const number = payload.number ? String(payload.number) : barcode;
 
-console.log("[print-preview] loaded", { name, barcode });
+console.log("[print-preview] loaded", { name, barcode, number });
 window.addEventListener("error", (event) => {
   console.error("[print-preview] window error", event.message, event.filename, event.lineno, event.colno);
 });
@@ -33,16 +34,18 @@ window.addEventListener("unhandledrejection", (event) => {
 const nameEl = document.getElementById("labelName");
 const barcodeEl = document.getElementById("labelBarcode");
 const barcodeValueEl = document.getElementById("labelBarcodeValue");
+const numberEl = document.getElementById("labelNumber");
 const printBtn = document.getElementById("btnPrint");
 const closeBtn = document.getElementById("btnClose");
 
 nameEl.innerHTML = escapeHtml(name);
 barcodeValueEl.innerHTML = escapeHtml(barcode);
+numberEl.innerHTML = `NO ${escapeHtml(number)}`;
 
 if (barcode) {
   barcodeEl.src = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(
     barcode
-  )}&scale=3&height=18&includetext=false`;
+  )}&scale=2&height=8&includetext=false`;
   barcodeEl.addEventListener("load", () => {
     console.log("[print-preview] barcode image loaded");
   });
