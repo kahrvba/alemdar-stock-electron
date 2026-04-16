@@ -139,9 +139,9 @@ const buildPplbEplBarcodeCommand = (value) => {
     // EPL2 barcode command: Bx,y,rotation,type,narrow,wide,height,hr,text
     // Using type "3" (Code128 on many EPL2-compatible firmwares).
     `B20,84,0,3,2,4,54,B,"${barcode}"`,
-    `A20,146,0,2,1,1,N,"${barcode}"`,
-    `A290,92,0,4,1,1,N,"${price}"`,
-    `A290,132,0,3,1,1,N,"${numberText}"`,
+    `A20,146,0,3,1,1,N,"${barcode}"`,
+    `A316,92,0,4,1,1,N,"${price}"`,
+    `A316,132,0,4,1,1,N,"${numberText}"`,
     "P1",
     "",
   ].join("\r\n");
@@ -163,9 +163,9 @@ const buildPplzZplBarcodeCommand = (value) => {
     "^LH0,0",
     `^FO20,12^A0N,30,26^FD${name}^FS`,
     `^FO20,84^BY2,3,54^BCN,54,N,N,N^FD${barcode}^FS`,
-    `^FO20,146^A0N,24,20^FD${barcode}^FS`,
-    `^FO290,92^A0N,36,30^FD${price}^FS`,
-    `^FO290,132^A0N,24,20^FD${numberText}^FS`,
+    `^FO20,146^A0N,30,24^FD${barcode}^FS`,
+    `^FO320,92^A0N,36,30^FD${price}^FS`,
+    `^FO320,132^A0N,36,30^FD${numberText}^FS`,
     "^XZ",
     "",
   ].join("\r\n");
