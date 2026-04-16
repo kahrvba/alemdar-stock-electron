@@ -117,12 +117,46 @@ const normalizePrintPayload = (value) => {
 
 const sanitizeLabelText = (value) => sanitizePrintText(value).replace(/[,^~]/g, " ");
 
+const splitNameForLabel = (value, maxLineLength = 24) => {
+  const text = sanitizeLabelText(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return ["Item", ""];
+  const words = text.split(" ");
+  const lines = ["", ""];
+
+  for (const word of words) {
+    if (!lines[0]) {
+      lines[0] = word;
+      continue;
+    }
+    if ((`${lines[0]} ${word}`).length <= maxLineLength) {
+      lines[0] = `${lines[0]} ${word}`;
+      continue;
+    }
+    if (!lines[1]) {
+      lines[1] = word;
+      continue;
+    }
+    if ((`${lines[1]} ${word}`).length <= maxLineLength) {
+      lines[1] = `${lines[1]} ${word}`;
+      continue;
+    }
+    if (lines[1].length > maxLineLength - 1) {
+      lines[1] = `${lines[1].slice(0, maxLineLength - 1)}…`;
+    } else {
+      lines[1] = `${lines[1]}…`;
+    }
+    break;
+  }
+
+  return [lines[0] || "Item", lines[1] || ""];
+};
+
 const buildPplbEplBarcodeCommand = (value) => {
   const data = normalizePrintPayload(value);
 
   // PPLB(EPL2) style raw 60x30mm label (203dpi).
   // q480 ~= 60mm width, Q240 ~= 30mm height.
-  const name = sanitizeLabelText(data.name || "Item");
+  const [nameLine1, nameLine2] = splitNameForLabel(data.name || "Item");
   const barcode = sanitizeLabelText(data.barcode);
   const price = sanitizeLabelText(data.priceText);
   const numberText = sanitizeLabelText(`No ${data.number || ""}`.trim());
@@ -135,13 +169,14 @@ const buildPplbEplBarcodeCommand = (value) => {
     "ZT",
     "R0,0",
     "f100",
-    `A20,12,0,4,1,1,N,"${name}"`,
+    `A20,12,0,3,1,1,N,"${nameLine1}"`,
+    ...(nameLine2 ? [`A20,36,0,3,1,1,N,"${nameLine2}"`] : []),
     // EPL2 barcode command: Bx,y,rotation,type,narrow,wide,height,hr,text
     // Using type "3" (Code128 on many EPL2-compatible firmwares).
-    `B20,84,0,3,2,4,54,B,"${barcode}"`,
+    `B20,84,0,3,1,2,54,B,"${barcode}"`,
     `A20,146,0,3,1,1,N,"${barcode}"`,
-    `A316,92,0,4,1,1,N,"${price}"`,
-    `A316,132,0,4,1,1,N,"${numberText}"`,
+    `A352,90,0,4,1,1,N,"${price}"`,
+    `A352,130,0,4,1,1,N,"${numberText}"`,
     "P1",
     "",
   ].join("\r\n");
@@ -150,7 +185,7 @@ const buildPplbEplBarcodeCommand = (value) => {
 const buildPplzZplBarcodeCommand = (value) => {
   const data = normalizePrintPayload(value);
 
-  const name = sanitizeLabelText(data.name || "Item");
+  const [nameLine1, nameLine2] = splitNameForLabel(data.name || "Item");
   const barcode = sanitizeLabelText(data.barcode);
   const price = sanitizeLabelText(data.priceText);
   const numberText = sanitizeLabelText(`No ${data.number || ""}`.trim());
@@ -161,11 +196,12 @@ const buildPplzZplBarcodeCommand = (value) => {
     "^PW480",
     "^LL240",
     "^LH0,0",
-    `^FO20,12^A0N,30,26^FD${name}^FS`,
-    `^FO20,84^BY2,3,54^BCN,54,N,N,N^FD${barcode}^FS`,
+    `^FO20,12^A0N,24,22^FD${nameLine1}^FS`,
+    ...(nameLine2 ? [`^FO20,36^A0N,24,22^FD${nameLine2}^FS`] : []),
+    `^FO20,84^BY1,3,54^BCN,54,N,N,N^FD${barcode}^FS`,
     `^FO20,146^A0N,30,24^FD${barcode}^FS`,
-    `^FO320,92^A0N,36,30^FD${price}^FS`,
-    `^FO320,132^A0N,36,30^FD${numberText}^FS`,
+    `^FO352,90^A0N,36,30^FD${price}^FS`,
+    `^FO352,130^A0N,36,30^FD${numberText}^FS`,
     "^XZ",
     "",
   ].join("\r\n");
