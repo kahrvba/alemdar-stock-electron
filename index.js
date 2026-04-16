@@ -97,7 +97,10 @@ const normalizePrintPayload = (value) => {
   const name = sanitizePrintText(payload.name ?? "");
   const barcode = sanitizePrintText(payload.barcode ?? payload.id ?? "");
   const rawPrice = sanitizePrintText(payload.price ?? "");
+  const number = sanitizePrintText(payload.number ?? payload.id ?? "");
   const normalizedPrice = rawPrice ? rawPrice.replace(/[^\d.,-]/g, "") : "";
+  const numericPrice = Number(normalizedPrice.replace(",", "."));
+  const formattedPrice = Number.isFinite(numericPrice) ? numericPrice.toFixed(2) : "0.00";
 
   if (!barcode) {
     throw new Error("Barcode is required.");
@@ -106,8 +109,9 @@ const normalizePrintPayload = (value) => {
   return {
     name,
     barcode,
-    price: normalizedPrice || "0.00",
-    priceText: `$${normalizedPrice || "0.00"}`,
+    number,
+    price: formattedPrice,
+    priceText: `$${formattedPrice}`,
   };
 };
 
@@ -121,6 +125,7 @@ const buildPplbEplBarcodeCommand = (value) => {
   const name = sanitizeLabelText(data.name || "Item");
   const barcode = sanitizeLabelText(data.barcode);
   const price = sanitizeLabelText(data.priceText);
+  const numberText = sanitizeLabelText(`No ${data.number || ""}`.trim());
   return [
     "N",
     "q480",
@@ -135,7 +140,8 @@ const buildPplbEplBarcodeCommand = (value) => {
     // Using type "3" (Code128 on many EPL2-compatible firmwares).
     `B20,84,0,3,2,4,54,B,"${barcode}"`,
     `A20,146,0,2,1,1,N,"${barcode}"`,
-    `A332,104,0,5,1,1,N,"${price}"`,
+    `A290,92,0,4,1,1,N,"${price}"`,
+    `A290,132,0,3,1,1,N,"${numberText}"`,
     "P1",
     "",
   ].join("\r\n");
@@ -147,6 +153,7 @@ const buildPplzZplBarcodeCommand = (value) => {
   const name = sanitizeLabelText(data.name || "Item");
   const barcode = sanitizeLabelText(data.barcode);
   const price = sanitizeLabelText(data.priceText);
+  const numberText = sanitizeLabelText(`No ${data.number || ""}`.trim());
 
   // PPLZ(ZPL) style raw 60x30mm label (203dpi).
   return [
@@ -157,7 +164,8 @@ const buildPplzZplBarcodeCommand = (value) => {
     `^FO20,12^A0N,30,26^FD${name}^FS`,
     `^FO20,84^BY2,3,54^BCN,54,N,N,N^FD${barcode}^FS`,
     `^FO20,146^A0N,24,20^FD${barcode}^FS`,
-    `^FO332,104^A0N,44,36^FD${price}^FS`,
+    `^FO290,92^A0N,36,30^FD${price}^FS`,
+    `^FO290,132^A0N,24,20^FD${numberText}^FS`,
     "^XZ",
     "",
   ].join("\r\n");

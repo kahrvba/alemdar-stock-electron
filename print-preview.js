@@ -22,12 +22,13 @@ const payload = parsePayload() || {};
 const name = payload.name ? String(payload.name) : "Unknown Item";
 const barcode = payload.barcode ? String(payload.barcode) : "";
 const rawPrice = payload.price != null ? String(payload.price) : "0";
+const number = payload.number != null ? String(payload.number) : "";
 const parsedPrice = Number(rawPrice);
 const priceText = Number.isFinite(parsedPrice)
   ? `$${parsedPrice.toFixed(2)}`
   : `$${rawPrice}`;
 
-console.log("[print-preview] loaded", { name, barcode, priceText });
+console.log("[print-preview] loaded", { name, barcode, priceText, number });
 window.addEventListener("error", (event) => {
   console.error("[print-preview] window error", event.message, event.filename, event.lineno, event.colno);
 });
@@ -39,12 +40,14 @@ const nameEl = document.getElementById("labelName");
 const barcodeEl = document.getElementById("labelBarcode");
 const barcodeValueEl = document.getElementById("labelBarcodeValue");
 const priceEl = document.getElementById("labelPrice");
+const numberEl = document.getElementById("labelNumber");
 const printBtn = document.getElementById("btnPrint");
 const closeBtn = document.getElementById("btnClose");
 
 nameEl.innerHTML = escapeHtml(name);
 barcodeValueEl.innerHTML = escapeHtml(barcode);
 priceEl.innerHTML = escapeHtml(priceText);
+numberEl.innerHTML = escapeHtml(number ? `No ${number}` : "");
 
 if (barcode) {
   barcodeEl.src = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(

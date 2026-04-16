@@ -66,7 +66,7 @@
         grid-template-rows: 9mm 8.4mm 4.5mm;
         column-gap: 1.2mm;
         row-gap: 0.3mm;
-        overflow: hidden;
+        overflow: visible;
       }
 
       .name {
@@ -107,16 +107,29 @@
 
       .price {
         grid-column: 2 / 3;
-        grid-row: 2 / 4;
-        align-self: center;
+        grid-row: 2 / 3;
+        align-self: start;
         justify-self: end;
-        width: 12.5mm;
+        width: auto;
+        max-width: none;
         text-align: right;
-        font-size: 4.8mm;
+        font-size: 4.4mm;
         font-weight: 800;
         line-height: 1;
         white-space: nowrap;
-        overflow: hidden;
+        overflow: visible;
+      }
+
+      .number {
+        grid-column: 2 / 3;
+        grid-row: 3 / 4;
+        align-self: start;
+        justify-self: end;
+        text-align: right;
+        font-size: 2.8mm;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
       }
 
       @media print {
@@ -155,6 +168,7 @@
         <img id="labelBarcode" class="barcode" alt="Barcode" />
         <div id="labelBarcodeValue" class="barcode-value"></div>
         <div id="labelPrice" class="price"></div>
+        <div id="labelNumber" class="number"></div>
       </section>
     </main>
     <script src="./print-preview.js"></script>

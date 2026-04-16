@@ -26,6 +26,7 @@ const openPrintPreview = (item) => {
     name: item.title,
     barcode: String(item.barcode || item.id),
     price: item.price ? String(item.price) : "0",
+    number: String(item.id),
   };
   const encoded = encodeURIComponent(JSON.stringify(previewPayload));
 
@@ -127,6 +128,7 @@ const renderResults = (items) => {
         name: item.title,
         barcode: String(item.barcode || item.id),
         price: item.price ? String(item.price) : "0",
+        number: String(item.id),
       };
 
       logUi("raw print requested", rawPayload);
